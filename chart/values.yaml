@@ -28,11 +28,11 @@ postgresql:
 # These values are for the new database and user to be created.
 database:
   name: registry_devops_db
-  user: registry-devops-user2
+  user: registry_devops_db_user
   # Generated randomly in secrets.yaml. Don't assign it here
   password: ""
-  existingSecret: openg2p-commons-postgresql
-  existingSecretUserPasswordKey: registry-devops-user2
+  secret: registry-devops-db
+  secretUserPasswordKey: registry_devops_db_user
 
 # -- Kubernetes Job settings
 job:

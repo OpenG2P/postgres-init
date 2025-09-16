@@ -38,10 +38,11 @@ spec:
             - name: POSTGRES_USER
               value: {{ .Values.postgresql.user | quote }}
             - name: POSTGRES_PASSWORD
-              valueFrom: 
-                secretKeyRef: 
-                  name: {{ .Values.postgresql.existingSecret}} 
-                  key: {{ .Values.postgresql.existingSecretPostgresPasswordKey }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ tpl .Values.postgresql.existingSecret . }}
+                  key: {{ tpl .Values.postgresql.existingSecretPostgresPasswordKey . }}
+
             - name: DB_NAME
               value: {{ tpl .Values.database.name . | quote }} 
             - name: DB_USER
@@ -49,8 +50,8 @@ spec:
             - name: DB_PASSWORD
               valueFrom: 
                 secretKeyRef: 
-                  name: {{ .Values.database.existingSecret}} 
-                  key: {{ .Values.database.existingSecretUserPasswordKey }}
+                  name: {{ .Values.database.secret}} 
+                  key: {{ .Values.database.secretUserPasswordKey }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
