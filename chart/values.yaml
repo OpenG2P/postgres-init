@@ -17,7 +17,7 @@ fullnameOverride: ""
 # -- PostgreSQL connection settings
 # These values are used to connect to the existing PostgreSQL server.
 postgresql:
-  host: "openg2p-commons-postgesql"
+  host: "openg2p-commons-postgresql"
   port: 5432
   # -- Existing secret with PostgreSQL superuser credentials
   user: postgres
