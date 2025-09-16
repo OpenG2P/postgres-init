@@ -1,0 +1,21 @@
+apiVersion: v2
+name: postgres-init
+version: 0.0.0-develop
+appVersion: ""
+type: application
+description: A generic Helm chart to run a PostgreSQL database initialization job.
+keywords:
+  - postgresql
+  - database
+  - initialization
+  - job
+home: https://github.com/your-repo/postgres-init
+sources:
+  - https://github.com/openg2p/postgres-init
+maintainers:
+  - name: OpenG2P
+    email: info@openg2p.org
+icon: https://openg2p.github.io/openg2p-helm/openg2p-logo.png
+annotations:
+  catalog.cattle.io/display-name: "OpenG2P PostgreSQL Init"
+  openg2p.org/add-to-rancher: ""

@@ -1,0 +1,84 @@
+# Default values for postgres-init.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: openg2p/postgres-init
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "develop"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# -- PostgreSQL connection settings
+# These values are used to connect to the existing PostgreSQL server.
+postgresql:
+  host: "openg2p-commons-postgesql"
+  port: 5432
+  # -- Existing secret with PostgreSQL superuser credentials
+  user: postgres
+  existingSecret: openg2p-commons-postgresql
+  existingSecretPostgresPasswordKey: "postgres-password" 
+
+# -- New database and user settings
+# These values are for the new database and user to be created.
+database:
+  name: registry_devops_db
+  user: registry-devops-user2
+  # Generated randomly in secrets.yaml. Don't assign it here
+  password: ""
+  existingSecret: openg2p-commons-postgresql
+  existingSecretUserPasswordKey: registry-devops-user2
+
+# -- Kubernetes Job settings
+job:
+  # -- Annotations to add to the Job
+  annotations: {}
+  # -- How many times to retry the Job before marking it as failed
+  backoffLimit: 4
+  # -- Time-to-live seconds after the Job finishes
+  ttlSecondsAfterFinished: 100
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

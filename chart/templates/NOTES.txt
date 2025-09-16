@@ -1,0 +1,8 @@
+The PostgreSQL Initializer job has been created.
+
+To check the status of the job, run:
+  kubectl get job {{ include "postgres-init.fullname" . }} --namespace {{ .Release.Namespace }}
+
+To view the logs from the job, find the pod name and then run `kubectl logs`:
+  POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  kubectl logs $POD_NAME --namespace {{ .Release.Namespace }}
