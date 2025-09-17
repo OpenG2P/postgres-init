@@ -29,12 +29,12 @@ export PGPASSWORD=$POSTGRES_PASSWORD
 
 # Wait for the database to be ready
 echo "Waiting for PostgreSQL at $POSTGRES_HOST:$POSTGRES_PORT..."
-until psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -c '\q'; do
+until psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -c '\q' > /dev/null 2>&1; do
   >&2 echo "PostgreSQL is unavailable - sleeping"
   sleep 1
 done
 
->&2 echo "PostgreSQL is up - executing command"
+>&2 echo "PostgreSQL is up - executing commands"
 
 # Check if the database already exists
 if psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -lqt | cut -d \| -f 1 | grep -qw "$DB_NAME"; then
@@ -47,15 +47,22 @@ fi
 
 # Check if the user already exists
 if psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -tAc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" | grep -q 1; then
-  echo "User '$DB_USER' already exists. Skipping creation."
+  echo "User '$DB_USER' already exists. Updating privileges..."
+  # Update user privileges
+  psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -c "ALTER USER \"$DB_USER\" WITH CREATEDB CREATEROLE REPLICATION;"
 else
-  # Create the user and grant privileges
+  # Create the user with privileges
   echo "Creating user '$DB_USER'..."
-  psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -c "CREATE USER \"$DB_USER\" WITH PASSWORD '$DB_PASSWORD';"
+  psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -c "CREATE USER \"$DB_USER\" WITH PASSWORD '$DB_PASSWORD' CREATEDB CREATEROLE REPLICATION;"
 fi
 
-# Grant privileges
+# Grant privileges on the database and its objects
 echo "Granting privileges to '$DB_USER' on database '$DB_NAME'..."
 psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$DB_NAME" -c "GRANT ALL PRIVILEGES ON DATABASE \"$DB_NAME\" TO \"$DB_USER\";"
+
+echo "Granting schema and table privileges..."
+psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$DB_NAME" -c "GRANT CREATE ON SCHEMA public TO \"$DB_USER\";"
+psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$DB_NAME" -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"$DB_USER\";"
+psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$DB_NAME" -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO \"$DB_USER\";"
 
 echo "Database initialization complete."
