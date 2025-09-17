@@ -50,8 +50,8 @@ spec:
             - name: DB_PASSWORD
               valueFrom: 
                 secretKeyRef: 
-                  name: {{ .Values.database.secret}} 
-                  key: {{ .Values.database.secretUserPasswordKey }}
+                  name: {{ tpl .Values.database.secret . | quote }} 
+                  key: {{ tpl .Values.database.secretUserPasswordKey . | quote }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
