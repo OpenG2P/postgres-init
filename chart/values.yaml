@@ -31,9 +31,9 @@ database:
   user: registry_db_user
   # Generated randomly in secrets.yaml. Don't assign it here
   password: ""
-  secret: '{{ .Release.Name }}'
-  secretUserPasswordKey: registry_db_user
-
+  #secret: '{{ .Release.Name }}'
+  secret: registry 
+  secretUserPasswordKey: '{{ .Release.Name }}_db_user'
 # -- Kubernetes Job settings
 job:
   # -- Annotations to add to the Job
