@@ -27,15 +27,12 @@ postgresql:
 # -- New database and user settings
 # These values are for the new database and user to be created.
 database:
-  name: registry_devops_db
-  user: registry_devops_db_user
+  name: registry_db
+  user: registry_db_user
   # Generated randomly in secrets.yaml. Don't assign it here
   password: ""
-  # Due to contraints on Odoo side, we are forced to create the keys in the same PostgreSQL secret.
-  # Ideally we would have wanted separate secret for each database. 
-  # Same as postgresql.existingSecret
-  secret: openg2p-commons-postgresql
-  secretUserPasswordKey: registry_devops_db_user
+  secret: '{{ .Release.Name }}'
+  secretUserPasswordKey: registry_db_user
 
 # -- Kubernetes Job settings
 job:
