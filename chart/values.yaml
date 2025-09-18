@@ -31,7 +31,10 @@ database:
   user: registry_devops_db_user
   # Generated randomly in secrets.yaml. Don't assign it here
   password: ""
-  secret: registry-devops-db
+  # Due to contraints on Odoo side, we are forced to create the keys in the same PostgreSQL secret.
+  # Ideally we would have wanted separate secret for each database. 
+  # Same as postgresql.existingSecret
+  secret: openg2p-commons-postgresql
   secretUserPasswordKey: registry_devops_db_user
 
 # -- Kubernetes Job settings
