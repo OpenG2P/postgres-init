@@ -3,7 +3,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "postgres-init.fullname" $ }}-{{ .name | replace "_" "-" }}
+  name: {{ include "postgres-init.fullname" $ }}-{{ tpl .name $ | replace "_" "-" }}
   labels:
     {{- include "postgres-init.labels" $ | nindent 4 }}
   annotations:
@@ -27,7 +27,7 @@ spec:
       securityContext:
         {{- toYaml $.Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: {{ $.Chart.Name }}-{{ .name | replace "_" "-" }}
+        - name: {{ $.Chart.Name }}-{{ tpl .name $ | replace "_" "-" }}
           securityContext:
             {{- toYaml $.Values.securityContext | nindent 12 }}
           image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
