@@ -34,6 +34,9 @@ databases:
     #secret: '{{ .Release.Name }}'
     secret: registry
     secretUserPasswordKey: '{{ .Release.Name }}_db_user'
+    # List of extensions to install (comma-separated or list)
+    extensions: []
+
 # -- Kubernetes Job settings
 job:
   # -- Annotations to add to the Job

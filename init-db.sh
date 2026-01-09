@@ -15,6 +15,7 @@ usage() {
   echo "  DB_NAME               - Name of the database to create"
   echo "  DB_USER               - Name of the user to create"
   echo "  DB_PASSWORD           - Password for the new user"
+  echo "  DB_EXTENSIONS         - (Optional) List of extensions to install (comma or space separated)"
 }
 
 # Check for required environment variables
@@ -43,6 +44,17 @@ else
   # Create the database
   echo "Creating database '$DB_NAME'..."
   psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -c "CREATE DATABASE \"$DB_NAME\";"
+fi
+
+# Install extensions if specified
+if [ -n "$DB_EXTENSIONS" ]; then
+  echo "Installing extensions: $DB_EXTENSIONS"
+  # Replace commas with spaces to iterate
+  EXT_LIST=$(echo "$DB_EXTENSIONS" | tr ',' ' ')
+  for EXT in $EXT_LIST; do
+    echo "Creating extension '$EXT' in database '$DB_NAME'..."
+    psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS \"$EXT\";"
+  done
 fi
 
 # Check if the user already exists

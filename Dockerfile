@@ -8,5 +8,8 @@ RUN apk --no-cache add postgresql-client
 COPY init-db.sh /usr/local/bin/init-db.sh
 RUN chmod +x /usr/local/bin/init-db.sh
 
+# Default environment variables
+ENV DB_EXTENSIONS=""
+
 # Set the entrypoint to the initialization script
 ENTRYPOINT ["/usr/local/bin/init-db.sh"]

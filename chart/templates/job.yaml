@@ -54,6 +54,8 @@ spec:
                 secretKeyRef:
                   name: {{ tpl .secret $ | quote }}
                   key: {{ tpl .secretUserPasswordKey $ | quote }}
+            - name: DB_EXTENSIONS
+              value: {{ if .extensions }}{{ if kindIs "slice" .extensions }}{{ join "," .extensions | quote }}{{ else }}{{ .extensions | quote }}{{ end }}{{ else }}""{{ end }}
           resources:
             {{- toYaml $.Values.resources | nindent 12 }}
       {{- with $.Values.nodeSelector }}
