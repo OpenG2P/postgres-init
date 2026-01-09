@@ -49,12 +49,17 @@ fi
 # Install extensions if specified
 if [ -n "$DB_EXTENSIONS" ]; then
   echo "Installing extensions: $DB_EXTENSIONS"
-  # Replace commas with spaces to iterate
-  EXT_LIST=$(echo "$DB_EXTENSIONS" | tr ',' ' ')
-  for EXT in $EXT_LIST; do
-    echo "Creating extension '$EXT' in database '$DB_NAME'..."
-    psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS \"$EXT\";"
+  # Use tr to split by comma and read loop to handle potential spaces in names
+  echo "$DB_EXTENSIONS" | tr ',' '\n' | while read -r EXT; do
+    # Trim leading/trailing whitespace
+    EXT=$(echo "$EXT" | xargs)
+    if [ -n "$EXT" ]; then
+      echo "Creating extension '$EXT' in database '$DB_NAME'..."
+      psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS \"$EXT\";"
+    fi
   done
+else
+  echo "No extensions specified for database '$DB_NAME'. Skipping extension installation."
 fi
 
 # Check if the user already exists
