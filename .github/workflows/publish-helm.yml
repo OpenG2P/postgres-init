@@ -1,0 +1,93 @@
+name: Publish Helm Charts
+
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - '**'
+    paths:
+      - 'chart/**'
+  workflow_dispatch:
+
+jobs:
+  generate-charts:
+    runs-on: ubuntu-latest
+    env:
+      SKIP: 'FALSE'
+      CHART_DIR: 'chart'
+      RANCHER_CHART_FILTER: "openg2p.org/add-to-rancher"
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Generate tar files
+      run: |
+        if [[ ! -f "${CHART_DIR}/Chart.yaml" ]]; then
+          echo "::warning::No Charts to publish";
+          echo "SKIP=TRUE" >> $GITHUB_ENV
+        else
+          RANCHER_CHARTS=()
+          chartname=$(grep '^name:' ${CHART_DIR}/Chart.yaml | awk '{print $2}')
+          echo "Chartname: $chartname"
+          helm dep up ${CHART_DIR}
+          helm package ${CHART_DIR}
+          is_rancher_chart=$(grep "$RANCHER_CHART_FILTER" ${CHART_DIR}/Chart.yaml || true)
+          if [ -n "$is_rancher_chart" ]; then
+            RANCHER_CHARTS+=("$chartname")
+          fi
+          echo "RANCHER_CHARTS=${RANCHER_CHARTS[@]}" >> $GITHUB_ENV
+        fi
+
+        shopt -s nocasematch
+        if [[ '${{ github.repository_owner }}' != 'OpenG2P' ]]; then
+          echo "SKIP=TRUE" >> $GITHUB_ENV
+        fi
+
+    - name: Upload tar as Artifact
+      uses: actions/upload-artifact@v4
+      with:
+          name: charts
+          path: ./*.tgz
+      if: env.SKIP != 'TRUE'
+
+    - name: Checkout branch for publishing
+      uses: actions/checkout@v3
+      with:
+          repository: 'openg2p/openg2p-helm'
+          ref: gh-pages
+          token: ${{ secrets.OPENG2P_BOT_GITHUB_PAT }}
+      if: env.SKIP != 'TRUE'
+
+    - name: Download tar from Artifacts
+      uses: actions/download-artifact@v4
+      with:
+          name: charts
+          path: ./
+      if: env.SKIP != 'TRUE'
+
+    - name: Update index.yaml
+      run: |
+        helm repo index .
+        for chartname in $RANCHER_CHARTS; do
+          cp ${chartname}*.tgz rancher/
+        done
+        helm repo index --url ../ --merge rancher/index.yaml rancher
+        for chartname in $RANCHER_CHARTS; do
+          rm rancher/${chartname}*.tgz || true
+        done
+      if: env.SKIP != 'TRUE'
+
+    - name: Commit Changes to repository
+      uses: EndBug/add-and-commit@v7
+      with:
+        branch: gh-pages
+        author_name: openg2pbot
+        author_email: bot@openg2p.org
+        default_author: user_info
+        message: 'added postgres-init helm charts for publish openg2p/postgres-init@${{ github.sha }}'
+        add: './*.tgz ./index.yaml rancher/index.yaml'
+      if: env.SKIP != 'TRUE'
