@@ -3,7 +3,11 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "postgres-init.fullname" $ }}-{{ tpl .name $ | replace "_" "-" }}
+  {{- /* Job name must stay <= 63 chars: k8s copies it into the auto-generated
+         `job-name` pod-template label, whose VALUE is capped at 63. fullname +
+         db-name can exceed that (e.g. long release names repeated in both), so
+         truncate. */}}
+  name: {{ printf "%s-%s" (include "postgres-init.fullname" $) (tpl .name $ | replace "_" "-") | trunc 63 | trimSuffix "-" }}
   labels:
     {{- include "postgres-init.labels" $ | nindent 4 }}
   annotations:
