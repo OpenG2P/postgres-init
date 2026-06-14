@@ -39,8 +39,26 @@ databases:
 
 # -- Kubernetes Job settings
 job:
-  # -- Annotations to add to the Job
-  annotations: {}
+  # -- Annotations to add to the Job.
+  #
+  # Defaults make the Job a Helm pre-install/pre-upgrade hook with the
+  # `before-hook-creation` delete policy. This is the structural fix for the
+  # well-known "jobs.batch <name> already exists" failure that blocked
+  # reinstalls when a leftover Job from a previous attempt was still in the
+  # namespace. With `before-hook-creation`, Helm deletes the previous Job
+  # before creating the new one — so reinstalls always succeed.
+  #
+  # `hook-weight: "1"` orders the Job after the DB-password Secret hook
+  # (which has the default weight 0), so the secret exists before the Job
+  # tries to mount it.
+  #
+  # Override to `{}` (or any custom set) if you need the Job to be a regular
+  # release resource (e.g. for `helm get manifest` visibility) — but be
+  # aware reinstall collisions can re-surface in that case.
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation
   # -- How many times to retry the Job before marking it as failed
   backoffLimit: 4
   # -- Time-to-live seconds after the Job finishes
