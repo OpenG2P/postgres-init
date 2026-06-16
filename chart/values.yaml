@@ -41,24 +41,25 @@ databases:
 job:
   # -- Annotations to add to the Job.
   #
-  # Defaults make the Job a Helm pre-install/pre-upgrade hook with the
-  # `before-hook-creation` delete policy. This is the structural fix for the
-  # well-known "jobs.batch <name> already exists" failure that blocked
-  # reinstalls when a leftover Job from a previous attempt was still in the
-  # namespace. With `before-hook-creation`, Helm deletes the previous Job
-  # before creating the new one — so reinstalls always succeed.
+  # Default: NONE — the Job is a plain regular resource.
   #
-  # `hook-weight: "1"` orders the Job after the DB-password Secret hook
-  # (which has the default weight 0), so the secret exists before the Job
-  # tries to mount it.
+  # Do NOT make this a Helm install/upgrade hook when PostgreSQL is deployed
+  # in the SAME release (the common embedded-PG case). Both hook phases break:
+  #   - pre-install/pre-upgrade runs BEFORE PostgreSQL and its superuser
+  #     secret exist -> the Job fails ("secret not found", no DB to reach).
+  #   - post-install/post-upgrade runs only AFTER all regular resources are
+  #     Ready (helm --wait). Apps that need these databases (e.g. Keycloak)
+  #     can never become Ready until the DBs exist, so the hook never fires
+  #     -> DEADLOCK.
+  # As a regular resource the Job has no such gate: it runs alongside
+  # everything, waits for PostgreSQL via its built-in pg_isready loop, creates
+  # the DBs/users, and dependent apps retry until those appear.
   #
-  # Override to `{}` (or any custom set) if you need the Job to be a regular
-  # release resource (e.g. for `helm get manifest` visibility) — but be
-  # aware reinstall collisions can re-surface in that case.
-  annotations:
-    "helm.sh/hook": pre-install,pre-upgrade
-    "helm.sh/hook-weight": "1"
-    "helm.sh/hook-delete-policy": before-hook-creation
+  # (The "jobs.batch already exists" reinstall collision that motivated the
+  # earlier hook experiment is better handled by ttlSecondsAfterFinished
+  # and/or deleting the completed Job before reinstall — not by gating the
+  # Job behind a hook phase.)
+  annotations: {}
   # -- How many times to retry the Job before marking it as failed
   backoffLimit: 4
   # -- Time-to-live seconds after the Job finishes
@@ -68,17 +69,9 @@ serviceAccount:
   # Specifies whether a service account should be created
   create: true
   # Annotations to add to the service account.
-  #
-  # Because the Job (job.annotations above) is a pre-install/pre-upgrade hook,
-  # and Helm applies hooks BEFORE regular release resources, the ServiceAccount
-  # the Job's pod runs as must ALSO be a hook — otherwise the Job pod fails to
-  # schedule with `serviceaccount "<name>" not found`. It runs at a lower
-  # hook-weight than the Job (-5 < 1) so it (and the Secret at weight 0) exist
-  # before the Job pod starts. before-hook-creation keeps reinstalls idempotent.
-  annotations:
-    "helm.sh/hook": pre-install,pre-upgrade
-    "helm.sh/hook-weight": "-5"
-    "helm.sh/hook-delete-policy": before-hook-creation
+  # Keep empty: the Job is a regular resource (see job.annotations), so its
+  # ServiceAccount is created in the same wave and needs no hook ordering.
+  annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
