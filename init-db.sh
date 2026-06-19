@@ -64,9 +64,15 @@ fi
 
 # Check if the user already exists
 if psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -tAc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" | grep -q 1; then
-  echo "User '$DB_USER' already exists. Updating privileges..."
-  # Update user privileges
-  psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -c "ALTER USER \"$DB_USER\" WITH CREATEDB CREATEROLE REPLICATION;"
+  echo "User '$DB_USER' already exists. Updating password and privileges..."
+  # Always re-sync the password to the value supplied this run. The DB role
+  # persists on the shared Postgres server across reinstalls (it is NOT owned
+  # by the consuming Helm release), while the K8s secret holding the password
+  # is frequently regenerated. Without this re-sync the existing role keeps its
+  # OLD password and every component using the new secret fails to authenticate
+  # ("password authentication failed for user"). Re-setting it here makes the
+  # init idempotent: the role's password always matches the current secret.
+  psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -c "ALTER USER \"$DB_USER\" WITH PASSWORD '$DB_PASSWORD' CREATEDB CREATEROLE REPLICATION;"
 else
   # Create the user with privileges
   echo "Creating user '$DB_USER'..."
